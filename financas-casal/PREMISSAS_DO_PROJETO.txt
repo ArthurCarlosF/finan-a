@@ -1,0 +1,324 @@
+Projeto: Organizacao Financeira do Casal
+
+Objetivo
+- Criar um site para uso pessoal do casal para organizar financas.
+- O site sera hospedado no GitHub Pages.
+- O site sera conectado a uma planilha do Google por meio de Google Apps Script.
+
+Contexto tecnico inicial
+- Frontend: site estatico publicado no GitHub Pages.
+- Backend/API: Google Apps Script.
+- Base de dados: Google Sheets.
+
+Funcionalidade inicial: Centros de custo / orcamentos mensais
+- O app tera uma area para configurar centros de custo mensais.
+- Cada centro de custo tera pelo menos:
+  - Nome.
+  - Valor.
+- Exemplo:
+  - Alimentacao: R$ 1200,00.
+- O valor configurado representa o saldo/orcamento mensal disponivel para aquele centro de custo.
+- As antigas "despesas fixas" nao devem ser subtraidas automaticamente do saldo total todo mes.
+- O saldo total do casal sera dividido entre varios centros de custo.
+- Exemplo:
+  - Se Alimentacao tiver R$ 1200,00, entao existira um saldo mensal de R$ 1200,00 para Alimentacao.
+- O usuario podera:
+  - Adicionar novos centros de custo.
+  - Editar centros de custo existentes.
+  - Excluir centros de custo.
+  - Pausar/inativar centros de custo sem excluir o historico.
+- Deve existir um centro de custo especial chamado Investimentos.
+- O saldo mensal do centro de custo Investimentos sera calculado automaticamente pela soma dos aportes minimos mensais das caixinhas ativas.
+- O centro de custo Investimentos nao deve ser configurado manualmente como os demais centros, pois depende das caixinhas.
+- No fechamento mensal, a sobra positiva de um centro de custo deve ir para o saldo restante.
+- No fechamento mensal, o saldo negativo de um centro de custo deve acumular para o mes seguinte no proprio centro de custo.
+- Exemplo de sobra:
+  - Alimentacao tem R$ 1200,00.
+  - Foram gastos R$ 1100,00.
+  - Sobra R$ 100,00.
+  - Resultado: R$ 100,00 vai para o saldo restante.
+- Exemplo de falta:
+  - Alimentacao tem R$ 1200,00.
+  - Foram gastos R$ 1300,00.
+  - Falta R$ 100,00.
+  - Resultado: Alimentacao fica com pendencia de -R$ 100,00 para o mes seguinte.
+  - No mes seguinte, se o orcamento mensal continuar R$ 1200,00, o saldo inicial disponivel de Alimentacao sera R$ 1100,00.
+
+Funcionalidade: Lancamentos financeiros
+- Na pagina principal, o usuario podera registrar lancamentos financeiros.
+- Nome sugerido para a acao principal: "Novo lancamento".
+- O lancamento podera ser de tres tipos:
+  - Gasto.
+  - Investimento.
+  - Ganho extra.
+- Para lancamento do tipo Gasto, o usuario deve informar pelo menos:
+  - Valor total.
+  - Pessoa responsavel pela compra.
+  - Centro de custo de origem.
+  - Forma de pagamento.
+  - Quantidade de parcelas, quando for cartao de credito parcelado.
+- Opcoes de pessoa responsavel pela compra:
+  - Arthur.
+  - Carol.
+  - Ambos.
+- Formas de pagamento iniciais:
+  - Debito / PIX / dinheiro.
+  - Cartao de credito a vista.
+  - Cartao de credito parcelado.
+- Ao registrar um gasto, o app deve subtrair o valor do saldo do centro de custo escolhido.
+- Gastos em Debito / PIX / dinheiro pertencem ao mes atual.
+- Gastos no cartao de credito a vista pertencem ao mes atual para fins de controle de orcamento.
+- Gastos parcelados no cartao de credito devem comecar a descontar no mes atual.
+- Em compras parceladas, apenas a parcela correspondente ao mes deve ser descontada daquele mes.
+- As parcelas futuras devem ser agendadas para os proximos meses.
+- Exemplo de gasto em Debito / PIX / dinheiro:
+  - Centro de custo: Alimentacao.
+  - Valor: R$ 300,00.
+  - Resultado: subtrair R$ 300,00 de Alimentacao no mes atual, quando a rotina mensal for aplicada.
+- Exemplo de gasto no cartao de credito parcelado:
+  - Centro de custo: Alimentacao.
+  - Valor total: R$ 300,00.
+  - Parcelas: 3x.
+  - Resultado: subtrair R$ 100,00 de Alimentacao no mes atual e R$ 100,00 nos dois meses seguintes.
+- O app deve registrar os gastos para permitir consulta posterior.
+- O app deve ter um historico simples de compras.
+- O historico simples de compras deve exibir pelo menos:
+  - Data da compra.
+  - Pessoa responsavel: Arthur, Carol ou Ambos.
+  - Valor.
+  - Forma de pagamento: debito, credito a vista ou credito parcelado.
+  - Quantidade de parcelas, quando houver.
+  - Centro de custo.
+- O app deve considerar parcelas futuras no saldo previsto dos proximos meses.
+- Lancamentos financeiros poderao ser editados ou excluidos depois.
+- Ao editar ou excluir um lancamento, o app deve recalcular os saldos impactados.
+- Para lancamento do tipo Investimento, o usuario deve informar pelo menos:
+  - Valor aportado.
+  - Caixinha de destino.
+- Ao registrar um investimento, o valor deve:
+  - Consumir saldo do centro de custo Investimentos.
+  - Somar ao saldo atual da caixinha escolhida.
+  - Ser comparado com o aporte minimo mensal esperado da caixinha.
+- Para lancamento do tipo Ganho extra, o usuario deve informar pelo menos:
+  - Valor recebido.
+  - Descricao ou origem do ganho.
+- Ao registrar um ganho extra, o valor deve somar ao saldo geral e ao saldo restante.
+- Exemplo de ganho extra:
+  - Servico por fora: R$ 500,00.
+  - Resultado: saldo geral aumenta R$ 500,00 e saldo restante aumenta R$ 500,00.
+
+Premissas de produto
+- O app sera usado por duas pessoas: eu e minha esposa.
+- A experiencia deve ser simples e direta para uso frequente.
+- Os valores devem ser tratados em reais.
+- O app nao precisa de login nem token de seguranca.
+- A premissa e que o app nao armazenara informacoes sensiveis que coloquem o casal em risco.
+- Os centros de custo sao recorrentes mensalmente, salvo quando editados ou excluidos.
+- Gastos em Debito / PIX / dinheiro afetam o mes atual.
+- Gastos em cartao de credito a vista afetam o mes atual.
+- Gastos em cartao de credito parcelado afetam o mes atual e os meses futuros correspondentes ao numero de parcelas.
+- Investimentos afetam o centro de custo Investimentos e a caixinha escolhida.
+- Ganhos extras aumentam o saldo geral e o saldo restante.
+- A aplicacao efetiva dos salarios e dos descontos ocorrera em uma rotina mensal unica no quinto dia util.
+
+Funcionalidade: Salarios
+- O app tera uma area para configurar os salarios do casal.
+- Devem existir pelo menos dois campos editaveis:
+  - Salario Carol.
+  - Salario Arthur.
+- Todo quinto dia util do mes, os salarios configurados devem ser somados automaticamente ao saldo.
+- O valor somado ao saldo mensal sera:
+  - Salario Carol + Salario Arthur.
+- Os salarios devem poder ser editados quando necessario.
+- A mesma rotina mensal que aplica os salarios tambem deve aplicar os descontos previstos nos centros de custo.
+- A ordem sugerida da rotina mensal e:
+  - Creditar os salarios do mes.
+  - Gerar/repor os saldos mensais dos centros de custo.
+  - Reservar os aportes minimos mensais das caixinhas.
+  - Calcular o saldo restante.
+  - Aplicar os gastos de Debito / PIX / dinheiro do mes.
+  - Aplicar as parcelas de cartao de credito previstas para o mes.
+- A ideia e evitar multiplas rotinas automaticas, concentrando a virada financeira no quinto dia util.
+- A rotina mensal deve rodar automaticamente pelo Google Apps Script, sem precisar apertar botao no site.
+- A implementacao sugerida e criar um gatilho instalavel baseado em tempo no Apps Script.
+- O gatilho pode rodar diariamente, por exemplo de manha.
+- Ao rodar, o script deve verificar:
+  - Se a data atual e o quinto dia util do mes.
+  - Se a rotina daquele mes ainda nao foi aplicada.
+- Se nao for o quinto dia util, o script nao deve fazer alteracoes.
+- Se a rotina do mes ja tiver sido aplicada, o script nao deve aplicar novamente.
+- Deve existir uma trava/registro mensal para evitar duplicidade.
+- Pode existir uma opcao manual protegida para reprocessar ou aplicar a rotina mensal em caso de erro, mas o fluxo normal sera automatico.
+
+Premissas sobre salarios
+- Os valores dos salarios devem ser tratados em reais.
+- A recorrencia dos salarios e mensal.
+- A data de credito dos salarios sera o quinto dia util de cada mes.
+- Para a primeira versao, quinto dia util considera apenas dias de segunda a sexta.
+- Feriados nacionais, estaduais e municipais nao serao considerados no calculo inicial.
+- O app deve evitar somar o mesmo salario mais de uma vez no mesmo mes.
+- O app deve evitar aplicar os descontos mensais mais de uma vez no mesmo mes.
+
+Funcionalidade: Saldo geral e distribuicao mensal
+- A tela principal deve exibir o saldo geral.
+- A tela principal tambem deve exibir o saldo individual de cada centro de custo.
+- O salario mensal deve entrar no app e ser distribuido automaticamente entre:
+  - Centros de custo.
+  - Centro de custo Investimentos, calculado a partir dos aportes minimos mensais das caixinhas.
+  - Saldo restante.
+- O saldo geral representa a visao consolidada do dinheiro disponivel/comprometido.
+- O saldo restante representa o valor do salario que nao foi alocado em centros de custo nem em aportes minimos de caixinhas.
+- Se o salario total for maior que a soma dos centros de custo, incluindo Investimentos:
+  - A diferenca deve ficar em "saldo restante".
+  - O saldo restante pode ser usado para controle manual, aumento de centros de custo, novos centros de custo ou outros ajustes.
+- Se a soma dos centros de custo, incluindo Investimentos, for maior que o salario total:
+  - O app deve bloquear a configuracao.
+  - Nao deve ser permitido configurar compromissos fixos mensais maiores que o salario total.
+- O bloqueio se aplica a configuracao mensal fixa, nao aos gastos lancados.
+- Gastos podem deixar um centro de custo negativo.
+- Exemplo:
+  - Saldo de Alimentacao: R$ 500,00.
+  - Compra lancada em Alimentacao: R$ 600,00.
+  - Resultado: saldo de Alimentacao fica -R$ 100,00.
+- A justificativa e que, na vida real, compras podem ultrapassar o valor planejado mesmo que isso deixe o saldo negativo.
+- Quando um centro de custo fecha o mes negativo, esse negativo deve ser carregado para o mes seguinte.
+- Quando um centro de custo fecha o mes positivo, essa sobra deve ser transferida para o saldo restante.
+
+Funcionalidade: Caixinhas de investimento
+- O app tera uma area para criar, editar e excluir caixinhas de investimento.
+- As caixinhas funcionam de forma parecida com os centros de custo na configuracao, mas possuem regras proprias de objetivo e aporte.
+- Cada caixinha tera pelo menos:
+  - Nome.
+  - Tipo de investimento.
+  - Saldo atual.
+  - Valor minimo de aporte mensal.
+  - Objetivo final.
+- Exemplos de tipo de investimento:
+  - Tesouro.
+  - Porquinho do Inter.
+  - Bolsa.
+- Exemplo de caixinha:
+  - Nome: Casa.
+  - Tipo: Tesouro.
+  - Saldo atual: R$ 0,00.
+  - Aporte minimo mensal: R$ 100,00.
+  - Objetivo final: R$ 1000,00.
+- O usuario podera editar o saldo atual da caixinha.
+- A edicao do saldo atual serve para:
+  - Configurar valores que ja existiam antes da criacao do site.
+  - Corrigir o saldo conforme rendimento ou atualizacao do investimento.
+- O app deve permitir registrar aportes realizados em cada caixinha.
+- O valor minimo de aporte mensal de todas as caixinhas ativas deve compor automaticamente o centro de custo Investimentos.
+- Ao registrar um aporte em uma caixinha, o valor aportado deve consumir o saldo do centro de custo Investimentos.
+- Exemplo:
+  - Centro de custo Investimentos: R$ 300,00.
+  - Aporte registrado na caixinha Casa: R$ 100,00.
+  - Resultado: saldo de Investimentos passa a ser R$ 200,00.
+- Aporte em caixinha deve funcionar como um tipo especifico de lancamento, separado dos gastos comuns, mas com impacto no saldo de Investimentos.
+- O app deve comparar o aporte realizado com o valor minimo mensal esperado.
+- Se o aporte do mes for maior que o minimo, a diferenca fica positiva para a caixinha.
+- Se o aporte do mes for menor que o minimo, a diferenca fica negativa para a caixinha.
+- A diferenca acumulada pode compensar meses seguintes.
+- Exemplo:
+  - Aporte minimo mensal: R$ 100,00.
+  - Mes zero: usuario investe R$ 105,00.
+  - Resultado: caixinha fica R$ 5,00 positiva.
+  - Mes seguinte: usuario investe R$ 95,00.
+  - Resultado: a diferenca positiva de R$ 5,00 compensa o aporte menor, e a caixinha fica zerada.
+  - Se no mes seguinte o usuario investir R$ 94,00, ficara R$ 1,00 negativo/devendo para aquela caixinha.
+- Quando o saldo atual da caixinha atingir ou ultrapassar o objetivo final, o aporte minimo mensal deixa de ser obrigatorio.
+- Ao atingir o objetivo final, a caixinha nao deve mais ficar negativa por falta de aporte.
+- Depois de atingir o objetivo final, a diferenca mensal da caixinha pode ficar apenas positiva ou zerada.
+- Se o saldo atual for exatamente igual ao objetivo final, a caixinha fica zerada em relacao a obrigacao de aporte.
+- Se o saldo atual for maior que o objetivo final, a caixinha fica positiva em relacao ao objetivo.
+- Quando uma caixinha atingir o objetivo final e deixar de exigir aporte minimo, ela deve deixar de compor o saldo mensal do centro de custo Investimentos.
+- Caixinhas concluidas continuam ativas, mas sem aporte obrigatorio.
+- Caixinhas poderao ser editadas ou excluidas.
+- O app nao precisa registrar rendimentos como lancamento separado.
+- A correcao de rendimento ou defasagem sera feita manualmente editando o saldo atual da caixinha.
+
+Funcionalidade: Fechamento mensal
+- O app deve manter um fechamento mensal simples.
+- O fechamento mensal deve registrar um retrato do mes para consulta futura.
+- O fechamento mensal deve incluir pelo menos:
+  - Mes/ano.
+  - Salario total considerado.
+  - Saldo geral.
+  - Saldo restante.
+  - Saldos dos centros de custo.
+  - Saldos das caixinhas.
+  - Total de gastos do mes.
+  - Total de investimentos do mes.
+  - Total de ganhos extras do mes.
+- O historico mensal ajuda a preservar o passado mesmo que salarios, centros de custo ou caixinhas sejam editados no futuro.
+
+Estrutura inicial da planilha
+- Aba Config:
+  - Chave.
+  - Valor.
+- Aba Salarios:
+  - Pessoa.
+  - Valor.
+  - AtualizadoEm.
+- Aba CentrosDeCusto:
+  - Id.
+  - Nome.
+  - ValorMensal.
+  - Tipo.
+  - Status.
+  - CriadoEm.
+  - AtualizadoEm.
+- Aba Caixinhas:
+  - Id.
+  - Nome.
+  - TipoInvestimento.
+  - SaldoAtual.
+  - AporteMinimoMensal.
+  - ObjetivoFinal.
+  - Status.
+  - CriadoEm.
+  - AtualizadoEm.
+- Aba Lancamentos:
+  - Id.
+  - Data.
+  - MesCompetencia.
+  - Tipo.
+  - Pessoa.
+  - Descricao.
+  - ValorTotal.
+  - FormaPagamento.
+  - QuantidadeParcelas.
+  - CentroCustoId.
+  - CaixinhaId.
+  - CriadoEm.
+  - AtualizadoEm.
+- Aba Parcelas:
+  - Id.
+  - LancamentoId.
+  - NumeroParcela.
+  - TotalParcelas.
+  - MesCompetencia.
+  - ValorParcela.
+  - CentroCustoId.
+  - Status.
+- Aba FechamentosMensais:
+  - Id.
+  - MesCompetencia.
+  - SalarioTotal.
+  - SaldoGeral.
+  - SaldoRestante.
+  - TotalGastos.
+  - TotalInvestimentos.
+  - TotalGanhosExtras.
+  - DadosJson.
+  - AplicadoEm.
+- Aba RotinasExecutadas:
+  - MesCompetencia.
+  - NomeRotina.
+  - ExecutadaEm.
+  - Status.
+
+Pendencias tecnicas para a implementacao
+- Definir os detalhes de validacao do Apps Script.
+- Definir como sera feito o recalculo de saldos apos edicao/exclusao de lancamentos.
+- Definir se parcelas futuras poderao ser editadas individualmente ou apenas pelo lancamento original.
