@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Financas do Casal</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Financas do Casal</h1>
+        <p id="currentMonthLabel"></p>
+      </div>
+      <div class="header-actions">
+        <span class="sync-status" id="syncStatus">Modo local</span>
+        <button class="primary-button" id="openLaunchpad">Novo lancamento</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <nav class="tabs" aria-label="Navegacao principal">
+        <button class="tab active" data-view="dashboard">Painel</button>
+        <button class="tab" data-view="launches">Lancamentos</button>
+        <button class="tab" data-view="centers">Centros</button>
+        <button class="tab" data-view="boxes">Caixinhas</button>
+        <button class="tab" data-view="settings">Salarios</button>
+      </nav>
+
+      <section class="view active" id="dashboard">
+        <div class="summary-grid">
+          <article class="metric">
+            <span>Saldo geral</span>
+            <strong id="generalBalance">R$ 0,00</strong>
+          </article>
+          <article class="metric">
+            <span>Saldo restante</span>
+            <strong id="remainingBalance">R$ 0,00</strong>
+          </article>
+          <article class="metric">
+            <span>Salarios</span>
+            <strong id="salaryTotal">R$ 0,00</strong>
+          </article>
+          <article class="metric">
+            <span>Compromissos</span>
+            <strong id="committedTotal">R$ 0,00</strong>
+          </article>
+        </div>
+
+        <section class="panel">
+          <div class="panel-title">
+            <h2>Centros de custo</h2>
+          </div>
+          <div class="balance-list" id="centerBalances"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <h2>Caixinhas</h2>
+          </div>
+          <div class="box-list" id="boxProgress"></div>
+        </section>
+      </section>
+
+      <section class="view" id="launches">
+        <section class="panel">
+          <div class="panel-title">
+            <h2>Novo lancamento</h2>
+          </div>
+          <form id="launchForm" class="form-grid">
+            <label>
+              Tipo
+              <select name="type" id="launchType">
+                <option value="expense">Gasto</option>
+                <option value="investment">Investimento</option>
+                <option value="extraIncome">Ganho extra</option>
+              </select>
+            </label>
+            <label>
+              Data
+              <input name="date" type="date" required />
+            </label>
+            <label>
+              Valor
+              <input name="amount" type="number" min="0.01" step="0.01" required />
+            </label>
+            <label class="expense-field">
+              Pessoa
+              <select name="person">
+                <option value="Arthur">Arthur</option>
+                <option value="Carol">Carol</option>
+                <option value="Ambos">Ambos</option>
+              </select>
+            </label>
+            <label class="expense-field">
+              Centro de custo
+              <select name="centerId" id="launchCenter"></select>
+            </label>
+            <label class="expense-field">
+              Pagamento
+              <select name="paymentMethod" id="paymentMethod">
+                <option value="debit">Debito / PIX / dinheiro</option>
+                <option value="credit_cash">Credito a vista</option>
+                <option value="credit_installments">Credito parcelado</option>
+              </select>
+            </label>
+            <label class="expense-field installments-field">
+              Parcelas
+              <input name="installments" type="number" min="1" step="1" value="1" />
+            </label>
+            <label class="investment-field hidden">
+              Caixinha
+              <select name="boxId" id="launchBox"></select>
+            </label>
+            <label class="wide">
+              Descricao
+              <input name="description" type="text" placeholder="Mercado, aporte Casa, servico por fora..." />
+            </label>
+            <button class="primary-button" type="submit">Salvar lancamento</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <h2>Historico simples</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Pessoa</th>
+                  <th>Descricao</th>
+                  <th>Valor</th>
+                  <th>Destino</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="launchTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="centers">
+        <section class="panel">
+          <div class="panel-title">
+            <h2>Centros de custo</h2>
+          </div>
+          <form id="centerForm" class="form-grid">
+            <input name="id" type="hidden" />
+            <label>
+              Nome
+              <input name="name" type="text" required />
+            </label>
+            <label>
+              Valor mensal
+              <input name="monthlyValue" type="number" min="0" step="0.01" required />
+            </label>
+            <label>
+              Status
+              <select name="status">
+                <option value="active">Ativo</option>
+                <option value="paused">Pausado</option>
+              </select>
+            </label>
+            <button class="primary-button" type="submit">Salvar centro</button>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Valor mensal</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="centerTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="boxes">
+        <section class="panel">
+          <div class="panel-title">
+            <h2>Caixinhas</h2>
+          </div>
+          <form id="boxForm" class="form-grid">
+            <input name="id" type="hidden" />
+            <label>
+              Nome
+              <input name="name" type="text" required />
+            </label>
+            <label>
+              Tipo
+              <input name="investmentType" type="text" placeholder="Tesouro, Inter, Bolsa..." required />
+            </label>
+            <label>
+              Saldo atual
+              <input name="currentBalance" type="number" min="0" step="0.01" required />
+            </label>
+            <label>
+              Aporte minimo
+              <input name="monthlyMinimum" type="number" min="0" step="0.01" required />
+            </label>
+            <label>
+              Objetivo final
+              <input name="goal" type="number" min="0" step="0.01" required />
+            </label>
+            <label>
+              Status
+              <select name="status">
+                <option value="active">Ativa</option>
+                <option value="paused">Pausada</option>
+              </select>
+            </label>
+            <button class="primary-button" type="submit">Salvar caixinha</button>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Tipo</th>
+                  <th>Saldo</th>
+                  <th>Aporte minimo</th>
+                  <th>Objetivo</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="boxTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="settings">
+        <section class="panel">
+          <div class="panel-title">
+            <h2>Salarios</h2>
+          </div>
+          <form id="salaryForm" class="form-grid">
+            <label>
+              Salario Arthur
+              <input name="arthur" type="number" min="0" step="0.01" required />
+            </label>
+            <label>
+              Salario Carol
+              <input name="carol" type="number" min="0" step="0.01" required />
+            </label>
+            <button class="primary-button" type="submit">Salvar salarios</button>
+          </form>
+          <section class="notice" id="budgetNotice"></section>
+        </section>
+      </section>
+    </main>
+
+    <template id="actionButtonsTemplate">
+      <button class="icon-button edit-button" type="button">Editar</button>
+      <button class="icon-button danger delete-button" type="button">Excluir</button>
+    </template>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

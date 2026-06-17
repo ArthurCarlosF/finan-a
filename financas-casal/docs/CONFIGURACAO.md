@@ -6,7 +6,9 @@
 2. Envie a pasta do projeto para o repositorio.
 3. No GitHub, acesse `Settings > Pages`.
 4. Em `Build and deployment`, selecione a branch principal.
-5. Configure a publicacao a partir da pasta `/site`, se disponivel. Se o GitHub nao permitir selecionar `/site`, moveremos os arquivos do site para a raiz ou usaremos uma branch separada.
+5. Configure a publicacao a partir da raiz da branch `main`.
+
+Os arquivos do site tambem ficam copiados na raiz do repositorio (`index.html`, `app.js`, `config.js` e `styles.css`) para atender ao GitHub Pages em `https://arthurcarlosf.github.io/finan-a/`.
 
 ## Google Sheets
 
