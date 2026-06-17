@@ -83,6 +83,7 @@ select {
 
 .tab,
 .primary-button,
+.secondary-button,
 .icon-button {
   border: 0;
   cursor: pointer;
@@ -112,6 +113,18 @@ select {
 
 .primary-button:hover {
   background: var(--primary-dark);
+}
+
+.secondary-button {
+  background: #e8ece7;
+  border-radius: 6px;
+  color: var(--text);
+  min-height: 42px;
+  padding: 10px 16px;
+}
+
+.secondary-button:hover {
+  background: #dce3dc;
 }
 
 .view {
@@ -234,6 +247,12 @@ select {
 
 .wide {
   grid-column: 1 / -1;
+}
+
+.form-actions {
+  align-items: end;
+  display: flex;
+  gap: 8px;
 }
 
 .hidden {

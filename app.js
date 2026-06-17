@@ -145,6 +145,7 @@
 
     document.getElementById("launchType").addEventListener("change", updateLaunchFields);
     document.getElementById("paymentMethod").addEventListener("change", updateLaunchFields);
+    document.getElementById("cancelCenterEdit").addEventListener("click", resetCenterForm);
 
     launchForm.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -225,7 +226,7 @@
     }
 
     persistState();
-    document.getElementById("centerForm").reset();
+    resetCenterForm();
     render();
   }
 
@@ -525,11 +526,23 @@
 
   function editCenter(center) {
     const form = document.getElementById("centerForm");
-    form.elements.id.value = center.id;
-    form.elements.name.value = center.name;
-    form.elements.monthlyValue.value = center.monthlyValue;
-    form.elements.status.value = center.status;
+    form.elements.id.value = center.id || center.Id || "";
+    form.elements.name.value = center.name || center.Nome || "";
+    form.elements.monthlyValue.value = center.monthlyValue || center.ValorMensal || 0;
+    form.elements.status.value = center.status || center.Status || "active";
+    document.getElementById("centerSubmitButton").textContent = "Atualizar centro";
+    document.getElementById("cancelCenterEdit").classList.remove("hidden");
     showView("centers");
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+    form.elements.name.focus();
+  }
+
+  function resetCenterForm() {
+    const form = document.getElementById("centerForm");
+    form.reset();
+    form.elements.id.value = "";
+    document.getElementById("centerSubmitButton").textContent = "Salvar centro";
+    document.getElementById("cancelCenterEdit").classList.add("hidden");
   }
 
   function editBox(box) {
