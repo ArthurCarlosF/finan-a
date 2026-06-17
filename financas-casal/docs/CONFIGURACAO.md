@@ -37,6 +37,12 @@ Configuracao sugerida do Web App:
 
 O projeto foi definido sem login e sem token. Por isso, a planilha nao deve armazenar informacoes sensiveis.
 
+URL atual do Web App:
+
+`https://script.google.com/macros/s/AKfycbxPtU3fb2OWCTGDalEqN0I3cbyE-24XU5dSGs9RtJbdfECq_7PimBWoD-_Q2bV6w19J/exec`
+
+Sempre que o arquivo `apps-script/Code.gs` for alterado, cole a nova versao no Apps Script e crie uma nova implantacao ou atualize a implantacao existente para que a URL use o codigo mais recente.
+
 ## Rotina automatica
 
 A funcao `setupSpreadsheet` cria um gatilho diario para `rotinaDiaria`.

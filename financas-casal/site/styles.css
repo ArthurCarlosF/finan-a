@@ -52,6 +52,22 @@ select {
   margin: 8px 0 0;
 }
 
+.header-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.sync-status {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.82rem;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
 .app-shell {
   margin: 0 auto;
   max-width: 1180px;
@@ -278,6 +294,12 @@ th {
     align-items: flex-start;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .header-actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
   }
 
   .summary-grid,

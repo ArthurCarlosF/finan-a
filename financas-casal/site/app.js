@@ -1,5 +1,6 @@
 (function () {
   const STORAGE_KEY = "financas-casal-state-v1";
+  const API_URL = window.APP_CONFIG && window.APP_CONFIG.appsScriptUrl;
 
   const paymentLabels = {
     debit: "Debito / PIX / dinheiro",
@@ -13,12 +14,15 @@
     extraIncome: "Ganho extra"
   };
 
-  const state = loadState();
+  let state = loadState();
+  let syncTimer = null;
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
     setDefaultDates();
     bindNavigation();
     bindForms();
+    render();
+    await hydrateFromRemote();
     render();
   });
 
@@ -48,6 +52,69 @@
 
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function persistState() {
+    saveState();
+    queueRemoteSave();
+  }
+
+  async function hydrateFromRemote() {
+    if (!API_URL) {
+      setSyncStatus("Modo local");
+      return;
+    }
+
+    setSyncStatus("Sincronizando...");
+
+    try {
+      const response = await fetch(`${API_URL}?action=getState&v=${Date.now()}`);
+      const payload = await response.json();
+      if (!payload.ok) throw new Error(payload.error || "Falha ao carregar planilha.");
+      state = normalizeRemoteState(payload.data);
+      saveState();
+      setSyncStatus("Sincronizado");
+    } catch (error) {
+      console.warn("Falha ao sincronizar com Apps Script.", error);
+      setSyncStatus("Usando copia local");
+    }
+  }
+
+  function queueRemoteSave() {
+    if (!API_URL) {
+      setSyncStatus("Modo local");
+      return;
+    }
+
+    setSyncStatus("Salvando...");
+    window.clearTimeout(syncTimer);
+    syncTimer = window.setTimeout(saveRemoteState, 350);
+  }
+
+  async function saveRemoteState() {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          action: "saveState",
+          payload: toRemoteState(state)
+        })
+      });
+      const payload = await response.json();
+      if (!payload.ok) throw new Error(payload.error || "Falha ao salvar planilha.");
+      setSyncStatus("Sincronizado");
+    } catch (error) {
+      console.warn("Falha ao salvar no Apps Script.", error);
+      setSyncStatus("Salvo localmente");
+    }
+  }
+
+  function setSyncStatus(text) {
+    const target = document.getElementById("syncStatus");
+    if (target) target.textContent = text;
   }
 
   function bindNavigation() {
@@ -103,7 +170,7 @@
       const data = new FormData(salaryForm);
       state.salaries.Arthur = toMoney(data.get("arthur"));
       state.salaries.Carol = toMoney(data.get("carol"));
-      saveState();
+      persistState();
       render();
     });
   }
@@ -133,7 +200,7 @@
     }
 
     state.launches.push(launch);
-    saveState();
+    persistState();
   }
 
   function saveCenter(data) {
@@ -157,7 +224,7 @@
       return;
     }
 
-    saveState();
+    persistState();
     document.getElementById("centerForm").reset();
     render();
   }
@@ -184,7 +251,7 @@
       return;
     }
 
-    saveState();
+    persistState();
     document.getElementById("boxForm").reset();
     render();
   }
@@ -464,21 +531,21 @@
     if (launch.type === "investment") {
       updateBoxBalance(launch.boxId, launch.amount - previousAmount);
     }
-    saveState();
+    persistState();
     render();
   }
 
   function deleteCenter(id) {
     if (!confirm("Excluir este centro de custo?")) return;
     state.centers = state.centers.filter((center) => center.id !== id);
-    saveState();
+    persistState();
     render();
   }
 
   function deleteBox(id) {
     if (!confirm("Excluir esta caixinha?")) return;
     state.boxes = state.boxes.filter((box) => box.id !== id);
-    saveState();
+    persistState();
     render();
   }
 
@@ -489,8 +556,83 @@
       updateBoxBalance(launch.boxId, -launch.amount);
     }
     state.launches = state.launches.filter((launch) => launch.id !== id);
-    saveState();
+    persistState();
     render();
+  }
+
+  function normalizeRemoteState(remote) {
+    if (!remote) return defaultState();
+
+    if (!Array.isArray(remote.salaries)) {
+      return {
+        ...defaultState(),
+        ...remote,
+        salaries: {
+          Arthur: toMoney(remote.salaries && remote.salaries.Arthur),
+          Carol: toMoney(remote.salaries && remote.salaries.Carol)
+        },
+        centers: Array.isArray(remote.centers) ? remote.centers : [],
+        boxes: Array.isArray(remote.boxes) ? remote.boxes : [],
+        launches: Array.isArray(remote.launches) ? remote.launches : []
+      };
+    }
+
+    return {
+      salaries: remote.salaries.reduce((result, row) => {
+        result[row.Pessoa] = toMoney(row.Valor);
+        return result;
+      }, { Arthur: 0, Carol: 0 }),
+      centers: (remote.centers || []).map((row) => ({
+        id: row.Id,
+        name: row.Nome,
+        monthlyValue: toMoney(row.ValorMensal),
+        type: row.Tipo || "manual",
+        status: row.Status || "active"
+      })),
+      boxes: (remote.boxes || []).map((row) => ({
+        id: row.Id,
+        name: row.Nome,
+        investmentType: row.TipoInvestimento,
+        currentBalance: toMoney(row.SaldoAtual),
+        monthlyMinimum: toMoney(row.AporteMinimoMensal),
+        goal: toMoney(row.ObjetivoFinal),
+        status: row.Status || "active"
+      })),
+      launches: (remote.launches || []).map((row) => ({
+        id: row.Id,
+        date: toDateInput(row.Data),
+        month: row.MesCompetencia,
+        type: row.Tipo,
+        person: row.Pessoa,
+        description: row.Descricao,
+        amount: toMoney(row.ValorTotal),
+        paymentMethod: row.FormaPagamento,
+        installments: Number(row.QuantidadeParcelas || 1),
+        centerId: row.CentroCustoId,
+        boxId: row.CaixinhaId
+      }))
+    };
+  }
+
+  function toRemoteState(currentState) {
+    return {
+      salaries: currentState.salaries,
+      centers: currentState.centers,
+      boxes: currentState.boxes,
+      launches: currentState.launches,
+      installments: currentState.launches
+        .filter((launch) => launch.type === "expense")
+        .flatMap((launch) => buildInstallments(launch).map((installment, index) => ({
+          id: `${launch.id}-${index + 1}`,
+          launchId: launch.id,
+          number: index + 1,
+          total: Math.max(1, launch.installments || 1),
+          month: installment.month,
+          amount: installment.amount,
+          centerId: launch.centerId,
+          status: "active"
+        })))
+    };
   }
 
   function updateBoxBalance(boxId, delta) {
@@ -572,6 +714,14 @@
 
   function formatDate(value) {
     return new Intl.DateTimeFormat("pt-BR").format(new Date(`${value}T12:00:00`));
+  }
+
+  function toDateInput(value) {
+    if (!value) return "";
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   }
 
   function escapeHtml(value) {

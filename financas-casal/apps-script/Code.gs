@@ -20,10 +20,13 @@ const HEADERS = {
   [SHEETS.ROUTINES]: ["MesCompetencia", "NomeRotina", "ExecutadaEm", "Status"]
 };
 
-function doGet() {
+function doGet(event) {
+  const action = event && event.parameter && event.parameter.action;
+  const state = getWorkbookState();
+
   return jsonResponse({
     ok: true,
-    data: getWorkbookState()
+    data: action === "getRawState" ? state : toAppState_(state)
   });
 }
 
@@ -122,11 +125,111 @@ function getWorkbookState() {
 
 function saveWorkbookState(state) {
   setupMissingSheets_();
-  replaceSheetData_(SHEETS.SALARIES, state.salaries || []);
-  replaceSheetData_(SHEETS.COST_CENTERS, state.centers || []);
-  replaceSheetData_(SHEETS.BOXES, state.boxes || []);
-  replaceSheetData_(SHEETS.LAUNCHES, state.launches || []);
-  replaceSheetData_(SHEETS.INSTALLMENTS, state.installments || []);
+  const now = new Date();
+  const rows = toSheetState_(state, now);
+  replaceSheetData_(SHEETS.SALARIES, rows.salaries);
+  replaceSheetData_(SHEETS.COST_CENTERS, rows.centers);
+  replaceSheetData_(SHEETS.BOXES, rows.boxes);
+  replaceSheetData_(SHEETS.LAUNCHES, rows.launches);
+  replaceSheetData_(SHEETS.INSTALLMENTS, rows.installments);
+}
+
+function toAppState_(raw) {
+  return {
+    salaries: raw.salaries.reduce((result, row) => {
+      result[row.Pessoa] = number_(row.Valor);
+      return result;
+    }, { Arthur: 0, Carol: 0 }),
+    centers: raw.centers
+      .filter((row) => row.Tipo !== "investments")
+      .map((row) => ({
+        id: row.Id,
+        name: row.Nome,
+        monthlyValue: number_(row.ValorMensal),
+        type: row.Tipo || "manual",
+        status: row.Status || "active"
+      })),
+    boxes: raw.boxes.map((row) => ({
+      id: row.Id,
+      name: row.Nome,
+      investmentType: row.TipoInvestimento,
+      currentBalance: number_(row.SaldoAtual),
+      monthlyMinimum: number_(row.AporteMinimoMensal),
+      goal: number_(row.ObjetivoFinal),
+      status: row.Status || "active"
+    })),
+    launches: raw.launches.map((row) => ({
+      id: row.Id,
+      date: dateInput_(row.Data),
+      month: row.MesCompetencia,
+      type: row.Tipo,
+      person: row.Pessoa,
+      description: row.Descricao,
+      amount: number_(row.ValorTotal),
+      paymentMethod: row.FormaPagamento,
+      installments: Number(row.QuantidadeParcelas || 1),
+      centerId: row.CentroCustoId,
+      boxId: row.CaixinhaId
+    }))
+  };
+}
+
+function toSheetState_(state, now) {
+  const salaries = [
+    { Pessoa: "Arthur", Valor: number_(state.salaries && state.salaries.Arthur), AtualizadoEm: now },
+    { Pessoa: "Carol", Valor: number_(state.salaries && state.salaries.Carol), AtualizadoEm: now }
+  ];
+
+  const centers = (state.centers || []).map((center) => ({
+    Id: center.id,
+    Nome: center.name,
+    ValorMensal: number_(center.monthlyValue),
+    Tipo: center.type || "manual",
+    Status: center.status || "active",
+    CriadoEm: center.createdAt || now,
+    AtualizadoEm: now
+  }));
+
+  const boxes = (state.boxes || []).map((box) => ({
+    Id: box.id,
+    Nome: box.name,
+    TipoInvestimento: box.investmentType,
+    SaldoAtual: number_(box.currentBalance),
+    AporteMinimoMensal: number_(box.monthlyMinimum),
+    ObjetivoFinal: number_(box.goal),
+    Status: box.status || "active",
+    CriadoEm: box.createdAt || now,
+    AtualizadoEm: now
+  }));
+
+  const launches = (state.launches || []).map((launch) => ({
+    Id: launch.id,
+    Data: launch.date,
+    MesCompetencia: launch.month,
+    Tipo: launch.type,
+    Pessoa: launch.person,
+    Descricao: launch.description,
+    ValorTotal: number_(launch.amount),
+    FormaPagamento: launch.paymentMethod,
+    QuantidadeParcelas: Number(launch.installments || 1),
+    CentroCustoId: launch.centerId,
+    CaixinhaId: launch.boxId,
+    CriadoEm: launch.createdAt || now,
+    AtualizadoEm: now
+  }));
+
+  const installments = (state.installments || []).map((installment) => ({
+    Id: installment.id,
+    LancamentoId: installment.launchId,
+    NumeroParcela: installment.number,
+    TotalParcelas: installment.total,
+    MesCompetencia: installment.month,
+    ValorParcela: number_(installment.amount),
+    CentroCustoId: installment.centerId,
+    Status: installment.status || "active"
+  }));
+
+  return { salaries, centers, boxes, launches, installments };
 }
 
 function calculateMonthlySnapshot_(month) {
@@ -308,4 +411,14 @@ function number_(value) {
 
 function round_(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
+function dateInput_(value) {
+  if (!value) return "";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
