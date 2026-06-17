@@ -30,13 +30,14 @@ Funcionalidade inicial: Centros de custo / orcamentos mensais
 - Deve existir um centro de custo especial chamado Investimentos.
 - O saldo mensal do centro de custo Investimentos sera calculado automaticamente pela soma dos aportes minimos mensais das caixinhas ativas.
 - O centro de custo Investimentos nao deve ser configurado manualmente como os demais centros, pois depende das caixinhas.
-- No fechamento mensal, a sobra positiva de um centro de custo deve ir para o saldo restante.
+- No fechamento mensal, a sobra positiva de um centro de custo deve acumular para o mes seguinte no proprio centro de custo.
 - No fechamento mensal, o saldo negativo de um centro de custo deve acumular para o mes seguinte no proprio centro de custo.
 - Exemplo de sobra:
   - Alimentacao tem R$ 1200,00.
   - Foram gastos R$ 1100,00.
   - Sobra R$ 100,00.
-  - Resultado: R$ 100,00 vai para o saldo restante.
+  - Resultado: Alimentacao fica com sobra de R$ 100,00 para o mes seguinte.
+  - No mes seguinte, se o orcamento mensal continuar R$ 1200,00, o saldo inicial disponivel de Alimentacao sera R$ 1300,00.
 - Exemplo de falta:
   - Alimentacao tem R$ 1200,00.
   - Foram gastos R$ 1300,00.
@@ -182,7 +183,7 @@ Funcionalidade: Saldo geral e distribuicao mensal
   - Resultado: saldo de Alimentacao fica -R$ 100,00.
 - A justificativa e que, na vida real, compras podem ultrapassar o valor planejado mesmo que isso deixe o saldo negativo.
 - Quando um centro de custo fecha o mes negativo, esse negativo deve ser carregado para o mes seguinte.
-- Quando um centro de custo fecha o mes positivo, essa sobra deve ser transferida para o saldo restante.
+- Quando um centro de custo fecha o mes positivo, essa sobra deve ser carregada para o mes seguinte no proprio centro de custo.
 
 Funcionalidade: Caixinhas de investimento
 - O app tera uma area para criar, editar e excluir caixinhas de investimento.

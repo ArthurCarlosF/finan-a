@@ -257,25 +257,26 @@ function calculateMonthlySnapshot_(month) {
     .reduce((sum, row) => sum + number_(row.ValorParcela), 0);
 
   const centerBalances = activeCenters.map((center) => {
-    const spent = installments
-      .filter((row) => row.MesCompetencia === month && row.CentroCustoId === center.Id && row.Status !== "deleted")
-      .reduce((sum, row) => sum + number_(row.ValorParcela), 0);
+    const spent = getCenterConsumption_(center.Id, month, launches, installments);
+    const available = getAccumulatedCenterBudget_(center.Id, number_(center.ValorMensal), month, launches, installments);
 
     return {
       id: center.Id,
       name: center.Nome,
-      budget: number_(center.ValorMensal),
+      budget: available,
       spent,
-      balance: round_(number_(center.ValorMensal) - spent)
+      balance: round_(available - spent)
     };
   });
+
+  const investmentAvailable = getAccumulatedCenterBudget_("investments", investmentBudget, month, launches, installments);
 
   centerBalances.push({
     id: "investments",
     name: "Investimentos",
-    budget: investmentBudget,
+    budget: investmentAvailable,
     spent: totalInvestments,
-    balance: round_(investmentBudget - totalInvestments)
+    balance: round_(investmentAvailable - totalInvestments)
   });
 
   const remainingBalance = round_(salaryTotal + totalExtraIncome - committedTotal);
@@ -293,6 +294,49 @@ function calculateMonthlySnapshot_(month) {
     centerBalances,
     boxes
   };
+}
+
+function getCenterConsumption_(centerId, month, launches, installments) {
+  if (centerId === "investments") {
+    return launches
+      .filter((row) => row.Tipo === "investment" && row.MesCompetencia === month)
+      .reduce((sum, row) => sum + number_(row.ValorTotal), 0);
+  }
+
+  return installments
+    .filter((row) => row.MesCompetencia === month && row.CentroCustoId === centerId && row.Status !== "deleted")
+    .reduce((sum, row) => sum + number_(row.ValorParcela), 0);
+}
+
+function getAccumulatedCenterBudget_(centerId, monthlyBudget, targetMonth, launches, installments) {
+  let balance = 0;
+  const firstMonth = getFirstRelevantMonth_(centerId, targetMonth, launches, installments);
+
+  for (let month = firstMonth; month <= targetMonth; month = addMonths_(month, 1)) {
+    balance = round_(balance + monthlyBudget - getCenterConsumption_(centerId, month, launches, installments));
+  }
+
+  return round_(balance + getCenterConsumption_(centerId, targetMonth, launches, installments));
+}
+
+function getFirstRelevantMonth_(centerId, fallbackMonth, launches, installments) {
+  let months = [fallbackMonth];
+
+  if (centerId === "investments") {
+    months = months.concat(
+      launches
+        .filter((row) => row.Tipo === "investment")
+        .map((row) => row.MesCompetencia)
+    );
+  } else {
+    months = months.concat(
+      installments
+        .filter((row) => row.CentroCustoId === centerId && row.Status !== "deleted")
+        .map((row) => row.MesCompetencia)
+    );
+  }
+
+  return months.filter(Boolean).sort()[0];
 }
 
 function createDailyTrigger_() {
@@ -397,6 +441,12 @@ function jsonResponse(payload) {
 
 function monthKey_(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function addMonths_(month, amount) {
+  const parts = month.split("-").map(Number);
+  const date = new Date(parts[0], parts[1] - 1 + amount, 1);
+  return monthKey_(date);
 }
 
 function sameDate_(a, b) {

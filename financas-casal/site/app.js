@@ -290,22 +290,24 @@
 
     const centerBalances = activeCenters.map((center) => {
       const spent = getCenterConsumption(center.id, month);
+      const available = getAccumulatedCenterBudget(center.id, center.monthlyValue, month);
       return {
         id: center.id,
         name: center.name,
-        budget: center.monthlyValue,
+        budget: available,
         spent,
-        balance: roundMoney(center.monthlyValue - spent)
+        balance: roundMoney(available - spent)
       };
     });
 
     const investmentSpent = getCenterConsumption("investments", month);
+    const investmentAvailable = getAccumulatedCenterBudget("investments", investmentBudget, month);
     centerBalances.push({
       id: "investments",
       name: "Investimentos",
-      budget: investmentBudget,
+      budget: investmentAvailable,
       spent: investmentSpent,
-      balance: roundMoney(investmentBudget - investmentSpent)
+      balance: roundMoney(investmentAvailable - investmentSpent)
     });
 
     const remainingBalance = roundMoney(salaryTotal + extraIncome - committedTotal);
@@ -337,6 +339,28 @@
     }, 0);
   }
 
+  function getAccumulatedCenterBudget(centerId, monthlyBudget, targetMonth) {
+    let balance = 0;
+    const firstMonth = getFirstRelevantMonth(centerId, targetMonth);
+
+    for (let month = firstMonth; month <= targetMonth; month = addMonths(month, 1)) {
+      balance = roundMoney(balance + monthlyBudget - getCenterConsumption(centerId, month));
+    }
+
+    return roundMoney(balance + getCenterConsumption(centerId, targetMonth));
+  }
+
+  function getFirstRelevantMonth(centerId, fallbackMonth) {
+    const months = state.launches.flatMap((launch) => {
+      if (launch.type === "investment" && centerId === "investments") return [launch.month];
+      if (launch.type !== "expense" || launch.centerId !== centerId) return [];
+      return buildInstallments(launch).map((installment) => installment.month);
+    });
+
+    months.push(fallbackMonth);
+    return months.sort()[0];
+  }
+
   function buildInstallments(launch) {
     const installments = Math.max(1, launch.installments || 1);
     const value = roundMoney(launch.amount / installments);
@@ -364,7 +388,7 @@
       row.innerHTML = `
         <div>
           <strong>${escapeHtml(item.name)}</strong>
-          <small>Orcamento ${currency(item.budget)} - usado ${currency(item.spent)}</small>
+          <small>Disponivel ${currency(item.budget)} - usado ${currency(item.spent)}</small>
         </div>
         <strong class="${item.balance < 0 ? "negative" : "positive"}">${currency(item.balance)}</strong>
       `;
