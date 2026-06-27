@@ -262,9 +262,9 @@
     const today = new Date();
     document.getElementById("currentMonthLabel").textContent = monthLabel(today);
     document.getElementById("generalBalance").textContent = currency(totals.generalBalance);
-    document.getElementById("remainingBalance").textContent = currency(totals.remainingBalance);
     document.getElementById("salaryTotal").textContent = currency(totals.salaryTotal);
     document.getElementById("committedTotal").textContent = currency(totals.committedTotal);
+    document.getElementById("unallocatedBalance").textContent = currency(totals.remainingBalance);
 
     renderBudgetNotice(totals);
     renderCenterOptions();
@@ -504,7 +504,7 @@
     const valid = totals.committedTotal <= totals.salaryTotal;
     notice.classList.toggle("error", !valid);
     notice.textContent = valid
-      ? `Compromissos configurados: ${currency(totals.committedTotal)}. Saldo restante previsto: ${currency(totals.remainingBalance)}.`
+      ? `Compromissos configurados: ${currency(totals.committedTotal)}. Valor nao alocado em centros: ${currency(totals.remainingBalance)}.`
       : `Compromissos configurados acima dos salarios em ${currency(totals.committedTotal - totals.salaryTotal)}. Ajuste salarios, centros ou caixinhas.`;
   }
 
@@ -678,7 +678,7 @@
   }
 
   function resolveLaunchTarget(launch) {
-    if (launch.type === "extraIncome") return "Saldo restante";
+    if (launch.type === "extraIncome") return "Valor nao alocado";
     if (launch.type === "investment") {
       const box = state.boxes.find((item) => item.id === launch.boxId);
       return box ? box.name : "Caixinha removida";

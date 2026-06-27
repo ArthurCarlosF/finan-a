@@ -138,11 +138,12 @@ select {
 .summary-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 16px;
 }
 
 .metric,
+.inline-metric,
 .panel,
 .notice {
   background: var(--surface);
@@ -167,6 +168,24 @@ select {
   display: block;
   font-size: clamp(1.3rem, 2.2vw, 1.8rem);
   line-height: 1.1;
+}
+
+.inline-metric {
+  align-items: center;
+  box-shadow: none;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  min-height: 64px;
+  padding: 14px;
+}
+
+.inline-metric span {
+  color: var(--muted);
+}
+
+.inline-metric strong {
+  font-size: 1.35rem;
 }
 
 .panel {
