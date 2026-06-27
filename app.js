@@ -1,6 +1,7 @@
 (function () {
   const STORAGE_KEY = "financas-casal-state-v1";
-  const API_URL = window.APP_CONFIG && window.APP_CONFIG.appsScriptUrl;
+  const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbxPtU3fb2OWCTGDalEqN0I3cbyE-24XU5dSGs9RtJbdfECq_7PimBWoD-_Q2bV6w19J/exec";
+  const API_URL = (window.APP_CONFIG && window.APP_CONFIG.appsScriptUrl) || DEFAULT_API_URL;
 
   const paymentLabels = {
     debit: "Debito / PIX / dinheiro",
@@ -71,7 +72,13 @@
       const response = await fetch(`${API_URL}?action=getState&v=${Date.now()}`);
       const payload = await response.json();
       if (!payload.ok) throw new Error(payload.error || "Falha ao carregar planilha.");
-      state = normalizeRemoteState(payload.data);
+      const remoteState = normalizeRemoteState(payload.data);
+      if (isStateEmpty(remoteState) && !isStateEmpty(state)) {
+        setSyncStatus("Salvando copia local...");
+        queueRemoteSave();
+        return;
+      }
+      state = remoteState;
       saveState();
       setSyncStatus("Sincronizado");
     } catch (error) {
@@ -649,6 +656,16 @@
         boxId: row.CaixinhaId
       }))
     };
+  }
+
+  function isStateEmpty(candidate) {
+    if (!candidate) return true;
+    const salaries = candidate.salaries || {};
+    return toMoney(salaries.Arthur) === 0
+      && toMoney(salaries.Carol) === 0
+      && (!candidate.centers || candidate.centers.length === 0)
+      && (!candidate.boxes || candidate.boxes.length === 0)
+      && (!candidate.launches || candidate.launches.length === 0);
   }
 
   function toRemoteState(currentState) {
