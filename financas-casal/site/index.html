@@ -30,7 +30,7 @@
       <section class="view active" id="dashboard">
         <div class="summary-grid">
           <article class="metric">
-            <span>Saldo geral</span>
+            <span>Saldo disponível</span>
             <strong id="generalBalance">R$ 0,00</strong>
           </article>
           <article class="metric">
@@ -38,7 +38,7 @@
             <strong id="salaryTotal">R$ 0,00</strong>
           </article>
           <article class="metric">
-            <span>Compromissos</span>
+            <span>Valor planejado no mês</span>
             <strong id="committedTotal">R$ 0,00</strong>
           </article>
         </div>
@@ -72,6 +72,7 @@
                 <option value="extraIncome">Ganho extra</option>
               </select>
             </label>
+            <div class="launch-help wide" id="launchTypeHelp"></div>
             <label>
               Data
               <input name="date" type="date" required />
@@ -129,7 +130,7 @@
                   <th>Pessoa</th>
                   <th>Descricao</th>
                   <th>Valor</th>
-                  <th>Destino</th>
+                  <th>Impacto</th>
                   <th></th>
                 </tr>
               </thead>
@@ -148,6 +149,7 @@
             <span>Valor não alocado em nenhum centro de custo</span>
             <strong id="unallocatedBalance">R$ 0,00</strong>
           </article>
+          <p class="helper-text">Investimentos é calculado automaticamente pela soma dos aportes mínimos das caixinhas ativas.</p>
           <form id="centerForm" class="form-grid">
             <input name="id" type="hidden" />
             <label>

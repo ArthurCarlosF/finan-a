@@ -188,6 +188,25 @@ select {
   font-size: 1.35rem;
 }
 
+.helper-text,
+.launch-help {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.helper-text {
+  margin: -6px 0 16px;
+}
+
+.launch-help {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-height: 42px;
+  padding: 11px 12px;
+}
+
 .panel {
   margin-bottom: 16px;
   padding: 18px;

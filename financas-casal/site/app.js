@@ -15,6 +15,12 @@
     extraIncome: "Ganho extra"
   };
 
+  const launchTypeHelp = {
+    expense: "Reduz o saldo de um centro de custo.",
+    investment: "Reduz Investimentos e aumenta a caixinha escolhida.",
+    extraIncome: "Aumenta o valor não alocado em nenhum centro de custo."
+  };
+
   let state = loadState();
   let syncTimer = null;
 
@@ -511,13 +517,14 @@
     const valid = totals.committedTotal <= totals.salaryTotal;
     notice.classList.toggle("error", !valid);
     notice.textContent = valid
-      ? `Compromissos configurados: ${currency(totals.committedTotal)}. Valor nao alocado em centros: ${currency(totals.remainingBalance)}.`
-      : `Compromissos configurados acima dos salarios em ${currency(totals.committedTotal - totals.salaryTotal)}. Ajuste salarios, centros ou caixinhas.`;
+      ? `Valor planejado no mes: ${currency(totals.committedTotal)}. Valor nao alocado em centros: ${currency(totals.remainingBalance)}.`
+      : `Valor planejado acima dos salarios em ${currency(totals.committedTotal - totals.salaryTotal)}. Ajuste salarios, centros ou caixinhas.`;
   }
 
   function updateLaunchFields() {
     const type = document.getElementById("launchType").value;
     const payment = document.getElementById("paymentMethod").value;
+    document.getElementById("launchTypeHelp").textContent = launchTypeHelp[type] || "";
     document.querySelectorAll(".expense-field").forEach((item) => item.classList.toggle("hidden", type !== "expense"));
     document.querySelectorAll(".investment-field").forEach((item) => item.classList.toggle("hidden", type !== "investment"));
     document.querySelector(".installments-field").classList.toggle("hidden", type !== "expense" || payment !== "credit_installments");
