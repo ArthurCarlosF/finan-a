@@ -161,7 +161,7 @@ function toAppState_(raw) {
     launches: raw.launches.map((row) => ({
       id: row.Id,
       date: dateInput_(row.Data),
-      month: row.MesCompetencia,
+      month: monthInput_(row.MesCompetencia || row.Data),
       type: row.Tipo,
       person: row.Pessoa,
       description: row.Descricao,
@@ -205,7 +205,7 @@ function toSheetState_(state, now) {
   const launches = (state.launches || []).map((launch) => ({
     Id: launch.id,
     Data: launch.date,
-    MesCompetencia: launch.month,
+    MesCompetencia: monthInput_(launch.month || launch.date),
     Tipo: launch.type,
     Pessoa: launch.person,
     Descricao: launch.description,
@@ -223,7 +223,7 @@ function toSheetState_(state, now) {
     LancamentoId: installment.launchId,
     NumeroParcela: installment.number,
     TotalParcelas: installment.total,
-    MesCompetencia: installment.month,
+    MesCompetencia: monthInput_(installment.month),
     ValorParcela: number_(installment.amount),
     CentroCustoId: installment.centerId,
     Status: installment.status || "active"
@@ -471,4 +471,15 @@ function dateInput_(value) {
   if (Number.isNaN(date.getTime())) return "";
 
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function monthInput_(value) {
+  if (!value) return monthKey_(new Date());
+  if (typeof value === "string" && /^\d{4}-\d{2}$/.test(value)) return value;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.substring(0, 7);
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return monthKey_(new Date());
+
+  return monthKey_(date);
 }

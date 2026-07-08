@@ -624,7 +624,7 @@
         },
         centers: Array.isArray(remote.centers) ? remote.centers : [],
         boxes: Array.isArray(remote.boxes) ? remote.boxes : [],
-        launches: Array.isArray(remote.launches) ? remote.launches : []
+        launches: Array.isArray(remote.launches) ? remote.launches.map(normalizeLaunch) : []
       };
     }
 
@@ -652,7 +652,7 @@
       launches: (remote.launches || []).map((row) => ({
         id: row.Id,
         date: toDateInput(row.Data),
-        month: row.MesCompetencia,
+        month: normalizeMonthKey(row.MesCompetencia || row.Data),
         type: row.Tipo,
         person: row.Pessoa,
         description: row.Descricao,
@@ -662,6 +662,17 @@
         centerId: row.CentroCustoId,
         boxId: row.CaixinhaId
       }))
+    };
+  }
+
+  function normalizeLaunch(launch) {
+    const date = toDateInput(launch.date);
+    return {
+      ...launch,
+      date,
+      month: normalizeMonthKey(launch.month || date),
+      amount: toMoney(launch.amount),
+      installments: Number(launch.installments || 1)
     };
   }
 
@@ -676,12 +687,14 @@
   }
 
   function toRemoteState(currentState) {
+    const launches = currentState.launches.map(normalizeLaunch);
+
     return {
       salaries: currentState.salaries,
       centers: currentState.centers,
       boxes: currentState.boxes,
-      launches: currentState.launches,
-      installments: currentState.launches
+      launches,
+      installments: launches
         .filter((launch) => launch.type === "expense")
         .flatMap((launch) => buildInstallments(launch).map((installment, index) => ({
           id: `${launch.id}-${index + 1}`,
@@ -758,6 +771,15 @@
   function monthKey(dateInput) {
     const date = dateInput instanceof Date ? dateInput : new Date(`${dateInput}T12:00:00`);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  function normalizeMonthKey(value) {
+    if (!value) return monthKey(new Date());
+    if (typeof value === "string" && /^\d{4}-\d{2}$/.test(value)) return value;
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 7);
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return monthKey(new Date());
+    return monthKey(date);
   }
 
   function addMonths(month, amount) {
